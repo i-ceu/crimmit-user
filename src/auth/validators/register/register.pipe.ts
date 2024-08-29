@@ -14,11 +14,11 @@ export class RegisterPipe implements PipeTransform {
     const user = await this.userService.findByEmail(value.email);
     const username = await this.userService.findByUsername(value.username);
 
-    if (user) throw new BadRequestException('email already exists');
-    if (username) throw new BadRequestException('username already exists');
+    if (user) throw new BadRequestException('Email already exists');
+    if (username) throw new BadRequestException('Username already exists');
 
     if (value.password !== value.confirmPassword)
-      throw new BadRequestException('password does not match');
+      throw new BadRequestException('Password and Confirm password do not match');
 
     delete value.confirmPassword;
     return value;
