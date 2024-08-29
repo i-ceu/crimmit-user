@@ -11,7 +11,7 @@ import { ConfigModule } from '@nestjs/config';
     UserModule,
     AuthModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot('mongodb+srv://isaacMain:chimdindu1@nasacluster.zixrz.mongodb.net/?retryWrites=true&w=majority&appName=NASACluster')
+    MongooseModule.forRoot(process.env.DB_URL)
   ],
   controllers: [AppController],
   providers: [AppService],
