@@ -1,54 +1,128 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
+import { getModelToken } from '@nestjs/mongoose';
+import { User, UserDocument } from '../users/user.schema';
+import { PasswordService } from '../utils/services/password.service';
+import { JwtService } from '@nestjs/jwt';
+import { RegisterUserDto } from '../auth/dto/register-user.dto';
+import { Model } from 'mongoose';
 import { UserService } from '../users/user.service';
-import { User } from 'src/users/user.schema';
 
 describe('AuthService', () => {
-  let authService: AuthService;
-  let userService: UserService;
+  let service: AuthService;
+  let userModel: Model<UserDocument>;
+  let passwordService: PasswordService;
   let jwtService: JwtService;
+  let userService: UserService;
+
+  const mockUserModel = {
+    create: jest.fn(),
+    find: jest.fn(),
+    findById: jest.fn(),
+    findOne: jest.fn(),
+    findByEmail: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findByIdAndDelete: jest.fn(),
+  };
+
+  const mockPasswordService = {
+    hashPassword: jest.fn(),
+  };
+
+  const mockJwtService = {
+    sign: jest.fn(),
+  };
+
+  const mockUserService = {
+    create: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        UserService,
-        JwtService
+        {
+          provide: getModelToken(User.name),
+          useValue: mockUserModel,
+        },
+        {
+          provide: PasswordService,
+          useValue: mockPasswordService,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
+        {
+          provide: UserService,
+          useValue: mockUserService,
+        },
       ],
-      imports: [
-        
-      ]
     }).compile();
 
-    authService = module.get<AuthService>(AuthService);
-    userService = module.get<UserService>(UserService);
+    service = module.get<AuthService>(AuthService);
+    userModel = module.get<Model<UserDocument>>(getModelToken(User.name));
+    passwordService = module.get<PasswordService>(PasswordService);
     jwtService = module.get<JwtService>(JwtService);
+    userService = module.get<UserService>(UserService);
   });
 
   it('should be defined', () => {
-    expect(authService).toBeDefined();
+    expect(service).toBeDefined();
   });
 
   describe('register', () => {
-    it('should register a new user and return user object', async () => {
-      const user = { name: 'guy boss', username: "guyb", email: 'newuser', password: 'newPass1', confirmPassword: 'newPass1', };
-      const createdUser = { ...user, _id: '1' };
-      jest.spyOn(authService, 'register').mockResolvedValue(createdUser);
-      const result = await authService.register(user);
-      expect(result).toEqual({ id: '1', username: 'newuser', name: "guy boss", email: 'newuser', password: 'newPass1' });
+    it('should hash password and create a new user', async () => {
+      const registerDto: RegisterUserDto = {
+        name: "test user",
+        username: "tester",
+        email: 'test@example.com',
+        password: 'password123',
+        confirmPassword: 'password123',
+      };
+      const hashedPassword = 'hashedPassword123';
+      const createdUser = {
+        id: 'some-id',
+        email: 'test@example.com',
+        name: "test user",
+        username: "tester",
+      };
+
+      mockPasswordService.hashPassword.mockResolvedValue(hashedPassword);
+      mockUserService.create.mockResolvedValue(createdUser);
+      const result = await service.register(registerDto);
+      expect(passwordService.hashPassword).toHaveBeenCalledWith(registerDto.password);
+
+      expect(userService.create).toHaveBeenCalledWith({
+        ...registerDto,
+        password: hashedPassword,
+      });
+      expect(result).toEqual(createdUser);
     });
   });
 
-  // describe('login', () => {
-  //   it('should return JWT token when credentials are valid', async () => {
-  //     const user = { username: 'testuser', id: '1' };
-  //     jest.spyOn(jwtService, 'sign').mockReturnValue('test-token');
+  describe('login', () => {
+    it('should generate and return access token with user', async () => {
+      const user = {
+        id: '123',
+        email: 'test@example.com',
+        name: "test user",
+        username: "tester",
+      };
+      const accessToken = 'generatedAccessToken';
 
-  //     const result = await authService.login(user);
-  //     expect(result).toEqual({ access_token: 'test-token' });
-  //     expect(jwtService.sign).toHaveBeenCalledWith({ username: 'testuser', sub: '1' });
-  //   });
-  // });
+      mockJwtService.sign.mockReturnValue(accessToken);
+
+      const result = await service.login(user);
+
+      expect(jwtService.sign).toHaveBeenCalledWith(
+        { id: user.id },
+        { secret: process.env.JWT_SECRET }
+      );
+      expect(result).toEqual({
+        user,
+        accessToken,
+      });
+    });
+  });
 });
-

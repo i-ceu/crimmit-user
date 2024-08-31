@@ -1,52 +1,37 @@
-# syntax = docker/dockerfile:1.2
+# syntax=docker/dockerfile:1
 
-###################
-# BUILD FOR LOCAL DEVELOPMENT
-###################
+ARG NODE_VERSION=20.16.0
 
-FROM node:18-alpine As development
-
+# Base stage
+FROM node:${NODE_VERSION}-alpine as base
 WORKDIR /usr/src/app
 
-COPY --chown=node:node package*.json ./
+# Dependencies stage
+FROM base as deps
+RUN --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=package-lock.json,target=package-lock.json \
+    --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
+# Build stage
+FROM deps as build
+COPY . .
 RUN npm ci
-
-COPY --chown=node:node . .
-
-USER node
-
-###################
-# BUILD FOR PRODUCTION
-###################
-
-FROM node:18-alpine As build
-
-WORKDIR /usr/src/app
-
-COPY --chown=node:node package*.json ./
-
-COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
-
-COPY --chown=node:node . .
-
 RUN npm run build
 
+# Final stage
+FROM base as final
 ENV NODE_ENV production
 
-RUN --mount=type=secret,id=_env,dst=/etc/secrets/.env cat .env
+# Ensure permissions
+COPY --from=build /usr/src/app/dist /usr/src/app/dist
+COPY --from=build /usr/src/app/node_modules /usr/src/app/node_modules
+COPY --from=build /usr/src/app/package.json /usr/src/app/package.json
+COPY tsconfig.json tsconfig.json
 
-RUN npm ci --only=production && npm cache clean --force
+RUN chown -R node:node /usr/src/app
 
 USER node
 
-###################
-# PRODUCTION
-###################
-
-FROM node:18-alpine As production
-
-COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node --from=build /usr/src/app/dist ./dist
-
-CMD [ "node", "dist/main.js" ]
+EXPOSE 3000
+CMD ["npm", "run", "start"]

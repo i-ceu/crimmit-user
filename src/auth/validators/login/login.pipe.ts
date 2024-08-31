@@ -3,10 +3,10 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-import { LoginDto } from 'src/auth/dto/login.dto';
-import { User } from 'src/users/user.schema';
-import { UserService } from 'src/users/user.service';
-import { PasswordService } from 'src/utils/services/password.service';
+import { LoginDto } from '../../../auth/dto/login.dto';
+import { User } from '../../../users/user.schema';
+import { UserService } from '../../../users/user.service';
+import { PasswordService } from '../../../utils/services/password.service';
 
 @Injectable()
 export class LoginPipe implements PipeTransform {

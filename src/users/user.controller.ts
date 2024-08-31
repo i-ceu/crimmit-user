@@ -1,6 +1,6 @@
-import { Controller, Get, Body, Param, Put, Delete, UseGuards, Res } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth';
-import { UserService } from 'src/users/user.service';
+import { Controller, Get, Body, Param, Put, Delete, UseGuards, Res, NotFoundException } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth';
+import { UserService } from './user.service';
 import { User } from './user.schema';
 import { Response } from 'express';
 
@@ -24,6 +24,7 @@ export class UserController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Res() res: Response) {
     const user = await this.userService.findOne(id);
+    if(!user) throw new NotFoundException("No user with this Id");
 
     res.status(200).json({
       message: 'User details retrieved succesfully',
@@ -32,9 +33,10 @@ export class UserController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: Partial<User>, @Res() res: Response) {
-    const updatedUser = this.userService.update(id, updateUserDto);
-
+  async update(@Param('id') id: string, @Body() updateUserDto: Partial<User>, @Res() res: Response) {
+    const user = await this.userService.findOne(id);
+    if(!user) throw new NotFoundException("No user with this Id");
+    const updatedUser = await this.userService.update(id, updateUserDto);
     res.status(200).json({
       message: 'User details updated succesfully',
       updatedUser,
@@ -42,8 +44,10 @@ export class UserController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Res() res: Response) {
-    this.userService.remove(id);
+  async remove(@Param('id') id: string, @Res() res: Response) {
+    const user = await this.userService.findOne(id);
+    if(!user) throw new NotFoundException("No user with this Id");
+    await this.userService.remove(id);
 
     res.status(200).json({
       message: 'User deleted succesfully',

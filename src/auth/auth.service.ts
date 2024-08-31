@@ -5,6 +5,7 @@ import { User, UserDocument } from '../users/user.schema';
 import { RegisterUserDto } from '../auth/dto/register-user.dto';
 import { PasswordService } from '../utils/services/password.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../users/user.service';
 
 @Injectable()
 export class AuthService {
@@ -12,12 +13,13 @@ export class AuthService {
   private userModel: Model<UserDocument>,
   private readonly passwordService: PasswordService,
   private readonly jwtService: JwtService,
+  private readonly userService: UserService
 ) {}
 
   async register(data: RegisterUserDto): Promise<User> {
-    data.password = await this.passwordService.hashPassword(data.password);
-    const createdUser = new this.userModel(data);
-    return createdUser.save();
+    const hashedPassword = await this.passwordService.hashPassword(data.password);
+    const createdUser = await this.userService.create({...data, password:hashedPassword});
+    return createdUser;
   }
 
   async login(user){

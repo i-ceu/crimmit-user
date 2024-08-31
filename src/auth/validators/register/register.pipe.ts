@@ -3,8 +3,8 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-import { RegisterUserDto } from 'src/auth/dto/register-user.dto';
-import { UserService } from 'src/users/user.service';
+import { RegisterUserDto } from '../../../auth/dto/register-user.dto';
+import { UserService } from '../../../users/user.service';
 
 @Injectable()
 export class RegisterPipe implements PipeTransform {
