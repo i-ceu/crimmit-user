@@ -33,3 +33,9 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Docker Image 
+```bash
+# pull docker image
+$ docker pull iceu/crimmit-user:latest
+
