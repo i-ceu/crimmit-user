@@ -5,6 +5,13 @@
 ## GitHub Repository
 [Github Repo](https://github.com/i-ceu/crimmit-user) 
 
+## Docker Image 
+[Docker container](https://hub.docker.com/r/iceu/crimmit-user)
+
+```bash
+# pull docker image
+$ docker pull iceu/crimmit-user:latest
+
 ## Project setup
 
 ```bash
@@ -36,9 +43,3 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
-
-## Docker Image 
-```bash
-# pull docker image
-$ docker pull iceu/crimmit-user:latest
-
