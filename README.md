@@ -11,6 +11,7 @@
 ```bash
 # pull docker image
 $ docker pull iceu/crimmit-user:latest
+```
 
 ## Project setup
 
