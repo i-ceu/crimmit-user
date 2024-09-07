@@ -11,10 +11,10 @@ services:
   server:
     build:
       context: .
+    env_file: .env
     environment:
-      NODE_ENV: production
-    env_file:
-      - .env
+      - DB_URL: $DB_URL
+      - JWT_SECRET: $JWT_SECRET
     ports:
       - 3000:3000
 
